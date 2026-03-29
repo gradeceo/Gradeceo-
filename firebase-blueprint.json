@@ -1,0 +1,28 @@
+{
+  "entities": {
+    "StudentProfile": {
+      "title": "Student Profile",
+      "description": "Stores student personal information and progress.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string", "description": "Full name of the student" },
+        "studentClass": { "type": "string", "description": "Current class (9-12 or Graduate)" },
+        "isDropper": { "type": "boolean", "description": "Whether the student is a dropper" },
+        "preparingFor": { "type": "string", "description": "Exam the student is preparing for" },
+        "dob": { "type": "string", "format": "date", "description": "Date of birth" },
+        "futureGoal": { "type": "string", "description": "Career goal (Engineer, Doctor, etc.)" },
+        "coins": { "type": "integer", "description": "Virtual currency earned" },
+        "achievements": { "type": "array", "items": { "type": "string" }, "description": "List of earned badges" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Profile creation timestamp" }
+      },
+      "required": ["uid", "name", "studentClass", "preparingFor", "dob", "futureGoal", "coins", "achievements", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/students/{uid}": {
+      "schema": "StudentProfile",
+      "description": "Individual student profiles"
+    }
+  }
+}

@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: students
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required)
+    //   - name: string (required, 1-100 chars)
+    //   - studentClass: string (required)
+    //   - isDropper: bool (required)
+    //   - preparingFor: string (required, 1-100 chars)
+    //   - dob: string (required, ISO date)
+    //   - futureGoal: string (required)
+    //   - coins: int (required, >= 0)
+    //   - achievements: list (required)
+    //   - createdAt: string (required)
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+          (request.auth.token.email == "gradeceo@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidStudent(data) {
+      return data.keys().hasAll(['uid', 'name', 'studentClass', 'isDropper', 'preparingFor', 'dob', 'futureGoal', 'coins', 'achievements', 'createdAt']) &&
+             data.uid is string && data.uid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.studentClass is string &&
+             data.isDropper is bool &&
+             data.preparingFor is string && data.preparingFor.size() > 0 &&
+             data.dob is string &&
+             data.futureGoal is string &&
+             data.coins is int && data.coins >= 0 &&
+             data.achievements is list &&
+             data.createdAt is string;
+    }
+
+    match /students/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid) && isValidStudent(request.resource.data);
+      allow update: if (isOwner(uid) || isAdmin()) && isValidStudent(request.resource.data) && 
+                    request.resource.data.createdAt == resource.data.createdAt &&
+                    request.resource.data.uid == resource.data.uid;
+      allow delete: if isAdmin();
+    }
+  }
+}
